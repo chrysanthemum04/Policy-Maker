@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #6a020f;
+  --color-background-light: #fbfcee;
+  --color-background-dark: #230f11;
+
+  --font-display: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  @import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    background-color: var(--color-background-light);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-background-light);
+    color: #0f0607;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+
+  .dark body {
+    background-color: var(--color-background-dark);
+    color: #fcf8f8;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    user-select: none;
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* Component Classes */
+.btn-primary {
+  @apply inline-flex items-center justify-center px-6 py-3 rounded-lg bg-primary text-white font-bold transition-all shadow-md hover:bg-primary/90 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-6 py-3 rounded-lg border-2 border-primary/20 bg-transparent text-primary font-bold transition-all hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.card-elevated {
+  @apply bg-white rounded-xl border border-primary/25 p-6 shadow-md hover:border-primary hover:shadow-lg transition-all;
+}
+
+.glass-card {
+  @apply bg-white rounded-xl border border-primary/25 shadow-md p-6 hover:border-primary hover:shadow-xl transition-all;
+}
+
+.input {
+  @apply w-full px-4 py-3 rounded-lg border border-primary/20 bg-white text-[#1c0c0e] placeholder:text-[#1c0c0e]/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.institutional-heading {
+  @apply font-display font-bold text-[#0f0607];
+}

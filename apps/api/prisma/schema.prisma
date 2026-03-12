@@ -1,0 +1,246 @@
+// Policywave - Prisma Schema
+// Refactored for AI-powered policy simulation platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  government
+  citizen
+  expert
+}
+
+enum AccountStatus {
+  active
+  suspended
+  deleted
+}
+
+enum PostStatus {
+  draft
+  published
+  removed
+}
+
+enum ConfidenceLevel {
+  high
+  medium
+  low
+}
+
+// ============================================================================
+// CORE ENTITIES
+// ============================================================================
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  passwordHash  String        @map("password_hash")
+  fullName      String        @map("full_name")
+  role          UserRole      // government | citizen | expert
+  accountStatus AccountStatus @default(active) @map("account_status")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  lastLoginAt   DateTime?     @map("last_login_at")
+
+  // Relations
+  citizenProfile  CitizenProfile?
+  expertProfile   ExpertProfile?
+  simulations     Simulation[]
+  posts           Post[]
+  comments        Comment[]
+  webinars        Webinar[]
+  likes           PostLike[]
+  savedPosts      SavedPost[]
+
+  @@map("users")
+}
+
+model CitizenProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique @map("user_id")
+  locationRegion     String?  @map("location_region")
+  occupationCategory String?  @map("occupation_category")
+  incomeBracket      String?  @map("income_bracket")
+  policyInterestTags String[] @default([]) @map("policy_interest_tags")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("citizen_profiles")
+}
+
+model ExpertProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique @map("user_id")
+  bio                String?
+  expertiseTags      String[] @default([]) @map("expertise_tags")
+  verificationStatus Boolean  @default(false) @map("verification_status")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("expert_profiles")
+}
+
+// ============================================================================
+// POLICY DOMAINS & SIMULATIONS
+// ============================================================================
+
+model PolicyDomain {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  simulations      Simulation[]
+  discussionThread DiscussionThread?
+
+  @@map("policy_domains")
+}
+
+model Simulation {
+  id              String          @id @default(uuid())
+  userId          String          @map("user_id")
+  roleContext     UserRole        @map("role_context") // Role at time of simulation
+  policyDomainId  String          @map("policy_domain_id")
+  inputParameters Json            @map("input_parameters") // User inputs
+  assumptions     Json            // AI-stated assumptions
+  aiOutput        Json            @map("ai_output") // Complete AI response
+  confidenceLevel ConfidenceLevel @map("confidence_level")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  user         User         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  policyDomain PolicyDomain @relation(fields: [policyDomainId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([policyDomainId])
+  @@index([createdAt])
+  @@map("simulations")
+}
+
+// ============================================================================
+// COMMUNITY & DISCUSSIONS
+// ============================================================================
+
+model DiscussionThread {
+  id             String   @id @default(uuid())
+  policyDomainId String   @unique @map("policy_domain_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  policyDomain PolicyDomain @relation(fields: [policyDomainId], references: [id], onDelete: Cascade)
+  posts        Post[]
+
+  @@map("discussion_threads")
+}
+
+model Post {
+  id         String     @id @default(uuid())
+  hubId      String?    @map("hub_id")
+  threadId   String?    @map("thread_id")
+  userId     String     @map("user_id")
+  title      String?
+  content    String
+  excerpt    String?
+  tags       String[]   @default([])
+  status     PostStatus @default(draft)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  upvoteCount Int        @default(0) @map("upvote_count")
+  commentCount Int       @default(0) @map("comment_count")
+
+  // Relations
+  thread   DiscussionThread? @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    PostLike[]
+  savedBy  SavedPost[]
+
+  @@index([threadId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model PostLike {
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@map("post_likes")
+}
+
+model SavedPost {
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@map("saved_posts")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
+  @@map("comments")
+}
+
+// ============================================================================
+// WEBINARS
+// ============================================================================
+
+model Webinar {
+  id            String   @id @default(uuid())
+  expertUserId  String   @map("expert_user_id")
+  title         String
+  description   String?
+  scheduledAt   DateTime @map("scheduled_at")
+  externalLink  String?  @map("external_link")
+  tags          String[] @default([])
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  expert User @relation(fields: [expertUserId], references: [id], onDelete: Cascade)
+
+  @@index([expertUserId])
+  @@index([scheduledAt])
+  @@map("webinars")
+}
