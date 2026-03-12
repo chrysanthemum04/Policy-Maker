@@ -5,9 +5,6 @@ Policy-Maker is a **civic-tech platform** that helps citizens, policymakers, and
 
 Instead of static reports, Policy-Maker uses **AI-driven simulations, role-aware reasoning, and structured outputs** to provide actionable insights for decision-making.
 
-**Demo Video:**  
-[Loom Video](https://www.loom.com/share/c1d65c86ad5746e59773c87deb41e53c)
-
 ---
 
 ## How Policy-Maker Works
